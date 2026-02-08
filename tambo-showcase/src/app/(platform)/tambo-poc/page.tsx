@@ -12,8 +12,8 @@ import {
   ThreadContentMessages,
 } from "@/components/tambo/thread-content";
 import { InteractableNote } from "@/components/Note";
+import { TamboProviderWithKey } from "@/components/TamboProviderWithKey";
 import { components, tools } from "@/lib/tambo";
-import { TamboProvider } from "@tambo-ai/react";
 
 const features = [
   "Generative UI - AI-rendered components",
@@ -26,8 +26,7 @@ const features = [
  */
 export default function TamboPoCPage() {
   return (
-    <TamboProvider
-      apiKey={process.env.NEXT_PUBLIC_TAMBO_API_KEY!}
+    <TamboProviderWithKey
       components={components}
       tools={tools}
       tamboUrl={process.env.NEXT_PUBLIC_TAMBO_URL}
@@ -104,6 +103,6 @@ export default function TamboPoCPage() {
           </div>
         </div>
       </div>
-    </TamboProvider>
+    </TamboProviderWithKey>
   );
 }

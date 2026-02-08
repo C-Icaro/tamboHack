@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useApiKey } from "@/contexts/ApiKeyContext";
 
 interface ApiKeyCheckProps {
   children: React.ReactNode;
@@ -82,7 +83,8 @@ const CopyButton = ({ text }: { text: string }) => {
 };
 
 export function ApiKeyCheck({ children }: ApiKeyCheckProps) {
-  const isApiKeyMissing = !process.env.NEXT_PUBLIC_TAMBO_API_KEY;
+  const { isConfigured } = useApiKey();
+  const isApiKeyMissing = !isConfigured;
 
   return (
     <div className="flex items-start gap-4">

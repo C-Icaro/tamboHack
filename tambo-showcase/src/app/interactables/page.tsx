@@ -11,8 +11,8 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/tambo/thread-content";
+import { TamboProviderWithKey } from "@/components/TamboProviderWithKey";
 import { components, tools } from "@/lib/tambo";
-import { TamboProvider } from "@tambo-ai/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { SettingsPanel } from "./components/settings-panel";
@@ -21,8 +21,7 @@ export default function InteractablesPage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   return (
-    <TamboProvider
-      apiKey={process.env.NEXT_PUBLIC_TAMBO_API_KEY!}
+    <TamboProviderWithKey
       components={components}
       tools={tools}
       tamboUrl={process.env.NEXT_PUBLIC_TAMBO_URL}
@@ -79,6 +78,6 @@ export default function InteractablesPage() {
           </div>
         </div>
       </div>
-    </TamboProvider>
+    </TamboProviderWithKey>
   );
 }

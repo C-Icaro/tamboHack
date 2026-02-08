@@ -1,25 +1,84 @@
 /**
  * Digital Twin SQLite client.
  * Reads from the Digital Twin database (processed_notes, insights).
+ *
+ * Modes:
+ * - External: DIGITAL_TWIN_DB_PATH set → read-only vault DB
+ * - Local: no env → uses ./data/digital_twin.db, supports uploads
  */
 
 import Database from "better-sqlite3";
+import fs from "fs";
+import path from "path";
+
+const LOCAL_DB_DIR = "data";
+const LOCAL_DB_FILE = "digital_twin.db";
+
+function getLocalDbPath(): string {
+  return path.join(process.cwd(), LOCAL_DB_DIR, LOCAL_DB_FILE);
+}
 
 function getDbPath(): string {
   const envPath = process.env.DIGITAL_TWIN_DB_PATH;
-  if (envPath) return envPath;
-  throw new Error(
-    "DIGITAL_TWIN_DB_PATH is required. Set it in .env.local pointing to your digital_twin.db file."
-  );
+  if (envPath?.trim()) return envPath;
+  return getLocalDbPath();
+}
+
+/** True when using in-app DB (no vault). Enables uploads. */
+export function isLocalMode(): boolean {
+  return !process.env.DIGITAL_TWIN_DB_PATH?.trim();
+}
+
+function ensureLocalDbDir(): void {
+  const dir = path.join(process.cwd(), LOCAL_DB_DIR);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS processed_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  content TEXT NOT NULL,
+  body_content TEXT,
+  tags TEXT,
+  folder_path TEXT,
+  frontmatter TEXT,
+  processed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS insights (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  note_id INTEGER NOT NULL,
+  insight_type TEXT NOT NULL,
+  insight_text TEXT NOT NULL,
+  created_at TEXT,
+  FOREIGN KEY (note_id) REFERENCES processed_notes(id)
+);
+CREATE INDEX IF NOT EXISTS idx_notes_processed ON processed_notes(processed_at);
+CREATE INDEX IF NOT EXISTS idx_insights_note ON insights(note_id);
+`;
+
+function initLocalSchema(db: Database.Database): void {
+  db.exec(SCHEMA);
 }
 
 export function getDbConnection(): Database.Database {
   const dbPath = getDbPath();
+  const isLocal = isLocalMode();
+
+  if (isLocal) {
+    ensureLocalDbDir();
+    const db = new Database(dbPath);
+    initLocalSchema(db);
+    return db;
+  }
+
   try {
     return new Database(dbPath, { readonly: true });
   } catch (err) {
     throw new Error(
-      `Failed to open Digital Twin database at ${dbPath}. Set DIGITAL_TWIN_DB_PATH in .env.local.`
+      `Failed to open Digital Twin database at ${dbPath}. Set DIGITAL_TWIN_DB_PATH in .env.local or use the upload feature.`
     );
   }
 }
@@ -217,6 +276,45 @@ export function getStats(): {
       totalInsights: insightsCount,
       byCategory: { sentimento, estudo },
     };
+  } finally {
+    db.close();
+  }
+}
+
+export interface InsertNoteInput {
+  title?: string | null;
+  content: string;
+  body_content?: string | null;
+  tags?: string | null;
+  folder_path?: string | null;
+}
+
+/** Insert a note. Only works in local mode (no vault). */
+export function insertNote(input: InsertNoteInput): number {
+  if (!isLocalMode()) {
+    throw new Error(
+      "Cannot insert notes when using vault. Set DIGITAL_TWIN_DB_PATH empty and use the upload feature."
+    );
+  }
+
+  const db = getDbConnection();
+  const now = new Date().toISOString();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO processed_notes (title, content, body_content, tags, folder_path, frontmatter, processed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const info = stmt.run(
+      input.title ?? null,
+      input.content,
+      input.body_content ?? input.content,
+      input.tags ?? null,
+      input.folder_path ?? null,
+      null,
+      now
+    );
+    return info.lastInsertRowid as number;
   } finally {
     db.close();
   }

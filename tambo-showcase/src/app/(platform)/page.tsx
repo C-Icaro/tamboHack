@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiKeyCheck } from "@/components/ApiKeyCheck";
+import { ApiKeySettings } from "@/components/ApiKeySettings";
 import { BreathingCard } from "@/components/wellness/BreathingCard";
 import Link from "next/link";
 import { FileText, Sparkles, MessageCircle } from "lucide-react";
@@ -92,6 +93,10 @@ export default function DashboardPage() {
             <Sparkles className="h-4 w-4" />
           </Link>
         </ApiKeyCheck>
+      </section>
+
+      <section>
+        <ApiKeySettings />
       </section>
     </div>
   );

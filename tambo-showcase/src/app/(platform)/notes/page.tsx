@@ -11,9 +11,10 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/tambo/thread-content";
+import { NotesUpload } from "@/components/NotesUpload";
+import { TamboProviderWithKey } from "@/components/TamboProviderWithKey";
 import { GentlePrompt } from "@/components/wellness/GentlePrompt";
 import { components, tools } from "@/lib/tambo";
-import { TamboProvider } from "@tambo-ai/react";
 
 /**
  * Digital Twin Notes - Adaptive interface for personal notes.
@@ -21,8 +22,7 @@ import { TamboProvider } from "@tambo-ai/react";
  */
 export default function NotesPage() {
   return (
-    <TamboProvider
-      apiKey={process.env.NEXT_PUBLIC_TAMBO_API_KEY!}
+    <TamboProviderWithKey
       components={components}
       tools={tools}
       tamboUrl={process.env.NEXT_PUBLIC_TAMBO_URL}
@@ -57,10 +57,11 @@ export default function NotesPage() {
         </div>
 
         {/* Visualization area - Right side */}
-        <div className="w-1/2 flex flex-col p-6 overflow-auto bg-wellness-bg">
+        <div className="w-1/2 flex flex-col p-6 overflow-auto bg-wellness-bg gap-6">
+          <NotesUpload />
           <GentlePrompt message="How about exploring your notes today? Use the chat on the left to search and view. The AI will render lists, details and insights here." />
         </div>
       </div>
-    </TamboProvider>
+    </TamboProviderWithKey>
   );
 }
